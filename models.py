@@ -1,5 +1,5 @@
 from datetime import datetime
-from app import db
+from extensions import db
 
 class Athlete(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -27,3 +27,4 @@ class Attendance(db.Model):
 
     athlete = db.relationship('Athlete', backref='attendances')
     session = db.relationship('Session', backref='attendances')
+
