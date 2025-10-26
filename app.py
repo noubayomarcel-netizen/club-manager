@@ -1,5 +1,41 @@
 from flask import Flask, render_template, request, redirect
 from datetime import datetime
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from datetime import datetime
+from models import Athlete, Session, Attendance
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///club.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+class Athlete(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(80), nullable=False)
+    last_name = db.Column(db.String(80), nullable=False)
+    belt = db.Column(db.String(30), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+class Session(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)  # e.g., "Gi BJJ - Adults"
+    start_time = db.Column(db.DateTime, nullable=False)
+    duration_minutes = db.Column(db.Integer, default=60)
+
+class Attendance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    athlete_id = db.Column(db.Integer, db.ForeignKey('athlete.id'), nullable=False)
+    session_id = db.Column(db.Integer, db.ForeignKey('session.id'), nullable=False)
+    check_in_time = db.Column(db.DateTime, default=datetime.utcnow)
+    effort = db.Column(db.Integer, default=0)     # 0-10 scale
+    discipline = db.Column(db.Integer, default=0) # 0-10 scale
+
+    athlete = db.relationship('Athlete', backref='attendances')
+    session = db.relationship('Session', backref='attendances')
 
 app = Flask(__name__)
 attendance_log = []
