@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Club Check-In</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h2>Coach Check-In Panel</h2>
+  <form action="/checkin" method="POST">
+    <input type="text" name="name" placeholder="Athlete Name" required><br>
+    <select name="sport">
+      <option value="BJJ">BJJ</option>
+      <option value="Wrestling">Wrestling</option>
+    </select><br>
+    <input type="number" name="effort" placeholder="Effort (1–5)" required><br>
+    <input type="number" name="discipline" placeholder="Discipline (1–5)" required><br>
+    <button type="submit">Check In</button>
+  </form>
+
+  <h2>Add Athlete Profile</h2>
+  <form action="/add_profile" method="POST">
+    <input type="text" name="name" placeholder="Name" required><br>
+    <select name="sport">
+      <option value="BJJ">BJJ</option>
+      <option value="Wrestling">Wrestling</option>
+    </select><br>
+    <input type="text" name="rank" placeholder="Rank/Belt"><br>
+    <input type="text" name="weight" placeholder="Weight Class"><br>
+    <input type="text" name="goal" placeholder="Training Goal"><br>
+    <button type="submit">Add Profile</button>
+  </form>
+
+  <h3>Athlete Profiles</h3>
+  <ul>
+    {% for athlete in athlete_profiles.values() %}
+      <li>
+        {{ athlete.name }} ({{ athlete.sport }}) – Rank: {{ athlete.rank }}, Weight: {{ athlete.weight }}, Goal: {{ athlete.goal }}
+        <form action="/edit_profile/{{ athlete.id }}" method="GET" style="display:inline;">
+          <button type="submit">Edit</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <h3>Attendance Log</h3>
+  <ul>
+    {% for entry in log %}
+      <li>{{ entry.time }} - {{ entry.name }} ({{ entry.sport }}) - Effort: {{ entry.effort }}, Discipline: {{ entry.discipline }}</li>
+    {% endfor %}
+  </ul>
+</body>
+</html>

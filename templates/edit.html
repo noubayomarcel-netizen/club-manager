@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Profile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <h2>Edit Athlete Profile</h2>
+  <form action="/update_profile/{{ athlete.id }}" method="POST">
+    <input type="text" name="name" value="{{ athlete.name }}" required><br>
+    <select name="sport">
+      <option value="BJJ" {% if athlete.sport == 'BJJ' %}selected{% endif %}>BJJ</option>
+      <option value="Wrestling" {% if athlete.sport == 'Wrestling' %}selected{% endif %}>Wrestling</option>
+    </select><br>
+    <input type="text" name="rank" value="{{ athlete.rank }}"><br>
+    <input type="text" name="weight" value="{{ athlete.weight }}"><br>
+    <input type="text" name="goal" value="{{ athlete.goal }}"><br>
+    <button type="submit">Update</button>
+  </form>
+</body>
+</html>
