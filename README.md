@@ -23,3 +23,4 @@ git clone https://github.com/yourusername/club-manager.git
 cd club-manager
 pip install -r requirements.txt
 python app.py
+"# club-manager" 
