@@ -27,4 +27,3 @@ class Attendance(db.Model):
 
     athlete = db.relationship('Athlete', backref='attendances')
     session = db.relationship('Session', backref='attendances')
-
