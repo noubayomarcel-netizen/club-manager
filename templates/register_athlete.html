@@ -1,7 +1,44 @@
-<h1>Register New Athlete</h1>
-<form method="post">
-    First Name: <input name="first_name"><br>
-    Last Name: <input name="last_name"><br>
-    Belt: <input name="belt"><br>
-    <button type="submit">Register</button>
+{% extends "base.html" %}
+{% block title %}Register Athlete{% endblock %}
+{% block content %}
+<h2 class="text-white mb-4">Register New Athlete</h2>
+<form method="POST" class="bg-dark p-4 rounded">
+  <div class="mb-3">
+    <label class="form-label">First Name</label>
+    <input type="text" name="first_name" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Last Name</label>
+    <input type="text" name="last_name" class="form-control" required>
+  </div>
+<div class="mb-3">
+  <label class="form-label">Belt</label>
+  <select name="belt" class="form-select" required>
+    <optgroup label="Kids BJJ Belts">
+      <option value="White">White</option>
+      <option value="Grey-white">Grey-white</option>
+      <option value="Grey">Grey</option>
+      <option value="Grey-black">Grey-black</option>
+      <option value="Yellow-white">Yellow-white</option>
+      <option value="Yellow">Yellow</option>
+      <option value="Yellow-black">Yellow-black</option>
+      <option value="Orange-white">Orange-white</option>
+      <option value="Orange">Orange</option>
+      <option value="Orange-black">Orange-black</option>
+      <option value="Green-white">Green-white</option>
+      <option value="Green">Green</option>
+      <option value="Green-black">Green-black</option>
+    </optgroup>
+    <optgroup label="Adult BJJ Belts">
+      <option value="White">White</option>
+      <option value="Blue">Blue</option>
+      <option value="Purple">Purple</option>
+      <option value="Brown">Brown</option>
+      <option value="Black">Black</option>
+    </optgroup>
+  </select>
+</div>
+
+  <button type="submit" class="btn btn-danger w-100">Register Athlete</button>
 </form>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Calendar{% endblock %}
+{% block content %}
+<div id="calendar" class="bg-dark p-3 rounded"></div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('calendar');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      themeSystem: 'bootstrap5',
+      events: [
+        {% for session in sessions %}
+        {
+          title: '{{ session.name }}',
+          start: '{{ session.start_time.isoformat() }}',
+          allDay: false
+        },
+        {% endfor %}
+      ]
+    });
+    calendar.render();
+  });
+</script>
+{% endblock %}

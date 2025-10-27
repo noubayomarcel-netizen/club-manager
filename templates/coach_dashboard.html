@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Coach Dashboard{% endblock %}
+{% block content %}
+<h2 class="text-white mb-4">📊 Coach Dashboard</h2>
+<div class="row text-white mb-4">
+  <div class="col"><div class="bg-danger p-3 rounded">Total Sessions: {{ total_sessions }}</div></div>
+  <div class="col"><div class="bg-dark p-3 rounded">Total Athletes: {{ total_athletes }}</div></div>
+  <div class="col"><div class="bg-warning p-3 rounded">Total Check-ins: {{ total_checkins }}</div></div>
+</div>
+<h4 class="text-white mt-4">Top 5 Most Active Athletes</h4>
+<table class="table table-dark table-bordered">
+  <thead><tr><th>Name</th><th>Check-ins</th></tr></thead>
+  <tbody>
+    {% for athlete, count in top_athletes %}
+    <tr><td>{{ athlete.full_name() }}</td><td>{{ count }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
