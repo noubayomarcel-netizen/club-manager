@@ -1,3 +1,18 @@
+# Club Manager
+
+A Flask-based web app for managing BJJ & Wrestling clubs. Coaches can track athletes, sessions, attendance, and announcements.
+
+## Features
+- Coach login and role-based access
+- Athlete registration and filtering
+- Timetable with attendance tracking
+- Announcements and dashboard summaries
+- Export to CSV (coming soon)
+
+## Installation
+```bash
+pip install -r requirements.txt
+
 # 🥋 Club Manager – BJJ & Wrestling Attendance System
 
 A mobile-friendly web app for coaches to manually check in athletes, track attendance, discipline, effort, and progress across BJJ and Wrestling clubs.
