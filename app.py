@@ -38,14 +38,13 @@ def home_summary():
         'Kids Wrestling', 'Adults Wrestling', 'Sheen Wrestling'
     ]
 
-    athlete_counts = {
-        "White": Athlete.query.filter_by(belt="White").count(),
-        "Blue": Athlete.query.filter_by(belt="Blue").count(),
-        "Purple": Athlete.query.filter_by(belt="Purple").count(),
-        "Brown": Athlete.query.filter_by(belt="Brown").count(),
-        "Black": Athlete.query.filter_by(belt="Black").count()
+    # ✅ Athletes per session group
+    group_counts = {
+        style: Athlete.query.filter_by(group=style).count()
+        for style in styles
     }
 
+    # ✅ Sessions per group this month
     session_counts = {
         style: Session.query.filter(
             Session.name.contains(style),
@@ -54,6 +53,7 @@ def home_summary():
         for style in styles
     }
 
+    # ✅ Attendance per group this month
     attendance_counts = {
         style: db.session.query(Attendance).join(Session).filter(
             Session.name.contains(style),
@@ -62,6 +62,7 @@ def home_summary():
         for style in styles
     }
 
+    # ✅ Top attendee per group
     top_attendees = {}
     for style in styles:
         result = db.session.query(
@@ -75,6 +76,7 @@ def home_summary():
 
         top_attendees[style] = f"{result.first_name} {result.last_name}" if result else '—'
 
+    # ✅ Most improved per group
     most_improved = {}
     for style in styles:
         result = db.session.query(
@@ -88,11 +90,12 @@ def home_summary():
         most_improved[style] = result[0] if result else '—'
 
     return render_template('home.html',
-                           athlete_counts=athlete_counts,
+                           group_counts=group_counts,
                            session_counts=session_counts,
                            attendance_counts=attendance_counts,
                            top_attendees=top_attendees,
                            most_improved=most_improved)
+ 
 
 @app.route('/timetable')
 def timetable():
