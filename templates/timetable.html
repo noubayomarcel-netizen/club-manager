@@ -1,60 +1,95 @@
 {% extends "base.html" %}
 {% block title %}Timetable{% endblock %}
+
 {% block content %}
 <h2 class="text-white mb-4">Upcoming Sessions</h2>
 
-<form method="POST" action="{{ url_for('bulk_delete_sessions') }}">
-  <div class="row row-cols-1 row-cols-md-2 g-3">
+<!-- ✅ Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<!-- ✅ Grouped Sessions by Weekday -->
+{% for weekday, sessions in grouped.items() %}
+  <h3 class="text-warning mt-4">{{ weekday }}</h3>
+  <ul class="list-group mb-3">
     {% for session in sessions %}
-    {% set color = 'primary' if 'BJJ' in session.name else 'warning' if 'Wrestling' in session.name else 'success' %}
-    <div class="col">
-      <div class="card text-white bg-{{ color }} h-100">
-        <div class="card-body">
-          <h5>{{ session.name }}</h5>
-          <p>{{ session.start_time.strftime('%Y-%m-%d %H:%M') }}</p>
+      <li class="list-group-item bg-dark text-white">
+        <strong>{{ session.name }}</strong> —
+        {% if session.date %}
+          {{ session.date.strftime("%d/%m/%Y %H:%M") }}
+        {% else %}
+          {{ session.time.strftime("%H:%M") }}
+        {% endif %}
+        — {{ session.location or 'No location' }} — {{ session.coach_name or 'No coach' }} — {{ session.group or '—' }}
+      </li>
+    {% endfor %}
+  </ul>
+{% endfor %}
 
-          {% if session.id %}
-            <!-- Check-in Form -->
-            <form method="POST" action="{{ url_for('checkin') }}">
-              <input type="hidden" name="session_id" value="{{ session.id }}">
-              <select name="athlete_name" required class="form-select mb-2">
-                <option value="">Select Athlete</option>
-                {% for athlete in athletes %}
-                <option value="{{ athlete.first_name }}">{{ athlete.first_name }}</option>
-                {% endfor %}
-              </select>
-              <input type="number" name="effort" placeholder="Effort (1–10)" required class="form-control mb-2">
-              <input type="number" name="discipline" placeholder="Discipline (1–10)" required class="form-control mb-2">
-              <button type="submit" class="btn btn-dark w-100">Check In</button>
-            </form>
+<!-- ✅ Card Layout for Individual Sessions -->
+<div class="row row-cols-1 row-cols-md-2 g-3">
+  {% for session in sessions %}
+  {% if session.group == 'Kids BJJ' %}
+    {% set color = 'info' %}
+  {% elif session.group == 'Adults BJJ' %}
+    {% set color = 'primary' %}
+  {% elif session.group == 'Kids Wrestling' %}
+    {% set color = 'warning' %}
+  {% elif session.group == 'Adults Wrestling' %}
+    {% set color = 'danger' %}
+  {% elif session.group == 'LOGA MMA' %}
+    {% set color = 'success' %}
+  {% elif session.group == 'CG MMA' %}
+    {% set color = 'secondary' %}
+  {% else %}
+    {% set color = 'dark' %}
+  {% endif %}
+  <div class="col">
+    <div class="card text-white bg-{{ color }} h-100">
+      <div class="card-body">
+        <h5 class="card-title">{{ session.name }}</h5>
+        <p><strong>Time:</strong> {{ session.date.strftime('%d/%m/%Y %H:%M') }}</p>
+        {% if session.group %}
+        <p><strong>Group:</strong> {{ session.group }}</p>
+        {% endif %}
+        {% if session.location %}
+        <p><strong>Location:</strong> {{ session.location }}</p>
+        {% endif %}
+        {% if session.coach_name %}
+        <p><strong>Coach:</strong> {{ session.coach_name }}</p>
+        {% endif %}
 
-            {% if current_user.role == 'coach' %}
-              <!-- Edit Button -->
-              <a href="{{ url_for('edit_session', session_id=session.id) }}" class="btn btn-sm btn-outline-light mt-2">Edit</a>
+        <!-- ✅ Check-in Form -->
+        <form method="POST" action="{{ url_for('checkin') }}">
+          <input type="hidden" name="session_id" value="{{ session.id }}">
+          <label class="form-label text-white">Athlete</label>
+          <select name="athlete_name" required class="form-select mb-2">
+            <option value="">Select Athlete</option>
+            {% for athlete in athletes %}
+            <option value="{{ athlete.first_name }}">{{ athlete.first_name }}</option>
+            {% endfor %}
+          </select>
+          <input type="number" name="effort" placeholder="Effort (1–10)" min="1" max="10" required class="form-control mb-2">
+          <input type="number" name="discipline" placeholder="Discipline (1–10)" min="1" max="10" required class="form-control mb-2">
+          <button type="submit" class="btn btn-dark w-100">✅ Check In</button>
+        </form>
 
-              <!-- Individual Delete -->
-              <form method="POST" action="{{ url_for('delete_session') }}" onsubmit="return confirm('Delete this session?');" class="mt-2">
-                <input type="hidden" name="session_id" value="{{ session.id }}">
-                <button type="submit" class="btn btn-sm btn-outline-light">Delete</button>
-              </form>
-
-              <!-- Bulk Delete Checkbox -->
-              <div class="form-check mt-2">
-                <input class="form-check-input" type="checkbox" name="session_ids" value="{{ session.id }}">
-                <label class="form-check-label">Select for bulk delete</label>
-              </div>
-            {% endif %}
-          {% else %}
-            <span class="badge bg-light text-dark">Recurring preview</span>
-          {% endif %}
-        </div>
+        <!-- ✅ Delete Button -->
+        <form method="POST" action="{{ url_for('delete_session') }}" class="mt-2">
+          <input type="hidden" name="session_id" value="{{ session.id }}">
+          <button type="submit" class="btn btn-sm btn-outline-light w-100">🗑️ Delete Session</button>
+        </form>
       </div>
     </div>
-    {% endfor %}
   </div>
-
-  {% if current_user.role == 'coach' %}
-  <button type="submit" class="btn btn-danger mt-3">Delete Selected Sessions</button>
-  {% endif %}
-</form>
+  {% endfor %}
+</div>
 {% endblock %}

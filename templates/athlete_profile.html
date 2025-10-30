@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ athlete.full_name() }}{% endblock %}
+
 {% block content %}
 <h2 class="text-white">{{ athlete.full_name() }}</h2>
-<p class="text-muted">Belt: {{ athlete.belt }}</p>
+<p class="text-muted">Belt: {{ athlete.belt or '—' }}</p>
 
 <h4 class="text-white mt-4">Session History</h4>
 <table class="table table-dark table-bordered">
@@ -18,7 +19,7 @@
     {% for c in checkins %}
     <tr>
       <td>{{ c.session.name }}</td>
-      <td>{{ c.session.start_time.strftime('%Y-%m-%d') }}</td>
+      <td>{{ c.session.start_time.strftime('%d/%m/%Y') }}</td>
       <td>{{ c.effort }}</td>
       <td>{{ c.discipline }}</td>
     </tr>

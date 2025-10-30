@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <title>{% block title %}Club Manager{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
         body { background-color: #111; color: #eee; }
         .navbar { background-color: #990000; }
@@ -14,27 +17,21 @@
     </style>
 </head>
 
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark">
   <div class="container-fluid">
-    <a class="nav-link" href="{{ url_for('home_summary') }}">Home</a>
-    <li class="nav-item">
-  <a class="nav-link" href="{{ url_for('home_summary') }}">Dashboard</a>
-</li>
+    <a class="navbar-brand" href="{{ url_for('home_summary') }}">Club Manager</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
+
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('home_summary') }}">Dashboard</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('athletes') }}">Athletes</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('timetable') }}">Timetable</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('summary') }}?period=week">Summary</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('register_athlete') }}">Register Athlete</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('home_summary') }}?period=week">Summary</a></li>
+        <li class="nav-item"><a class="nav-link text-success" href="{{ url_for('register_athlete') }}">➕ Add Athlete</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('create_session') }}">Create Session</a></li>
       </ul>
     </div>

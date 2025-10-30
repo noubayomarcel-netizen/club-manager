@@ -1,50 +1,58 @@
 {% extends "base.html" %}
 {% block title %}Create Session{% endblock %}
+
 {% block content %}
 <div class="bg-dark p-4 rounded border border-danger mx-auto" style="max-width: 500px;">
-    <h2 class="text-white text-center mb-4">Create New Session</h2>
-    <form method="POST">
-        <div class="mb-3">
-            <label class="form-label text-white">Session Name</label>
-            <input type="text" name="name" class="form-control" required>
-        </div>
-        <div class="mb-3">
-  <label class="form-label">Type</label>
-  <select name="type" class="form-select" required>
-    <option value="BJJ">BJJ</option>
-    <option value="Wrestling">Wrestling</option>
-    <option value="MMA">MMA</option> <!-- NEW -->
-  </select>
-</div>
+  <h2 class="text-white text-center mb-4">Create New Session</h2>
+  <form method="POST">
+    <div class="mb-3">
+      <label class="form-label text-white">Session Name</label>
+      <input type="text" name="name" class="form-control" required>
+    </div>
 
-        <div class="mb-3">
-            <label class="form-label text-white">Start Time</label>
-            <input type="datetime-local" name="start_time" class="form-control" value="{{ default_start }}" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label text-white">Duration (minutes)</label>
-            <input type="number" name="duration" class="form-control" required>
-        </div>
-        <button type="submit" class="btn btn-danger w-100">Create Session</button>
-    </<form method="POST">
-  <!-- existing fields -->
-  <div class="mb-3">
-    <label class="form-label">Recurring Weekly?</label>
-    <select name="recurring" class="form-select">
-      <option value="no">No</option>
-      <option value="yes">Yes</option>
-    </select>
-  </div>
-  <button type="submit" class="btn btn-danger w-100">Create Session</button>
-</form>
-<div class="mb-3">
-  <label class="form-label">Repeat Weekly?</label>
-  <select name="recurring" class="form-select">
-    <option value="no">No</option>
-    <option value="yes">Yes</option>
-  </select>
-</div>
+    <div class="mb-3">
+      <label class="form-label text-white">Type</label>
+      <select name="type" class="form-select" required>
+        <option value="BJJ">BJJ</option>
+        <option value="Wrestling">Wrestling</option>
+        <option value="MMA">MMA</option>
+      </select>
+    </div>
 
+    <div class="mb-3">
+      <label class="form-label text-white">Start Date</label>
+      <input type="date" name="start_date" class="form-control" required>
+    </div>
 
+    <div class="mb-3">
+      <label class="form-label text-white">Start Time</label>
+      <input type="time" name="start_time" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label text-white">Duration (minutes)</label>
+      <input type="number" name="duration" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label text-white">Location</label>
+      <input type="text" name="location" class="form-control" placeholder="Mat A">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label text-white">Coach Name</label>
+      <input type="text" name="coach_name" class="form-control" placeholder="Coach Eric">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label text-white">Recurring Weekly?</label>
+      <select name="recurring" class="form-select">
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-danger w-100">Create Session</button>
+  </form>
 </div>
 {% endblock %}

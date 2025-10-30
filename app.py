@@ -1,23 +1,12 @@
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, login_user, login_required, current_user
-from datetime import datetime, timedelta
 from sqlalchemy import func
-from extensions import db
-from flask import Flask
-from extensions import db
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///club.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = 'supersecretkey'
-
-db.init_app(app)
-
-# Initialize app and extensions
-from flask import Flask
 from extensions import db, migrate, login_manager
+from models import User, Athlete, Session, Attendance, Announcement
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///club.db'
@@ -28,17 +17,14 @@ db.init_app(app)
 migrate.init_app(app, db)
 login_manager.init_app(app)
 
-from models import User, Athlete, Session, Attendance, Announcement
-
-# Import models
-from models import User, Athlete, Session, Attendance, Announcement
-
-# Login manager setup
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
 # ------------------- Routes -------------------
+@app.route('/health')
+def health():
+    return "OK", 200
 
 @app.route('/', endpoint='home')
 @app.route('/home_summary')
@@ -53,14 +39,17 @@ def home_summary():
     ]
 
     athlete_counts = {
-        style: Athlete.query.filter_by(style=style).count()
-        for style in styles
+        "White": Athlete.query.filter_by(belt="White").count(),
+        "Blue": Athlete.query.filter_by(belt="Blue").count(),
+        "Purple": Athlete.query.filter_by(belt="Purple").count(),
+        "Brown": Athlete.query.filter_by(belt="Brown").count(),
+        "Black": Athlete.query.filter_by(belt="Black").count()
     }
 
     session_counts = {
         style: Session.query.filter(
             Session.name.contains(style),
-            Session.start_time.between(start_of_month, next_month)
+            Session.date.between(start_of_month, next_month)
         ).count()
         for style in styles
     }
@@ -68,7 +57,7 @@ def home_summary():
     attendance_counts = {
         style: db.session.query(Attendance).join(Session).filter(
             Session.name.contains(style),
-            Session.start_time.between(start_of_month, next_month)
+            Session.date.between(start_of_month, next_month)
         ).count()
         for style in styles
     }
@@ -81,7 +70,7 @@ def home_summary():
             func.count(Attendance.id).label('attendance_count')
         ).join(Attendance).join(Session).filter(
             Session.name.contains(style),
-            Session.start_time.between(start_of_month, next_month)
+            Session.date.between(start_of_month, next_month)
         ).group_by(Athlete.id).order_by(func.count(Attendance.id).desc()).first()
 
         top_attendees[style] = f"{result.first_name} {result.last_name}" if result else '—'
@@ -93,7 +82,7 @@ def home_summary():
             func.avg(Attendance.effort + Attendance.discipline).label('score')
         ).join(Attendance).join(Session).filter(
             Session.name.contains(style),
-            Session.start_time.between(start_of_month, next_month)
+            Session.date.between(start_of_month, next_month)
         ).group_by(Athlete.id).order_by(func.avg(Attendance.effort + Attendance.discipline).desc()).first()
 
         most_improved[style] = result[0] if result else '—'
@@ -107,26 +96,26 @@ def home_summary():
 
 @app.route('/timetable')
 def timetable():
-    now = datetime.utcnow()
-    end = now + timedelta(days=7)
+    now = datetime.today()
+    sessions = Session.query.filter(Session.date >= now).order_by(Session.date).all()
+    athletes = Athlete.query.order_by(Athlete.last_name).all()
 
-    sessions = Session.query.filter(
-        Session.start_time.between(now, end)
-    ).order_by(Session.start_time).all()
+    grouped = {}
+    for s in sessions:
+        if s.date:
+            weekday = s.date.strftime("%A")
+        else:
+            weekday_map = {
+                "Monday": 0, "Tuesday": 1, "Wednesday": 2,
+                "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6
+            }
+            target_weekday = weekday_map.get(s.weekday, 0)
+            next_date = now + timedelta(days=(target_weekday - now.weekday()) % 7)
+            weekday = next_date.strftime("%A")
 
-    recurring_sessions = Session.query.filter_by(recurring=True).all()
-    for s in recurring_sessions:
-        next_date = now + timedelta(days=(s.weekday - now.weekday()) % 7)
-        repeated = Session(
-            name=s.name,
-            start_time=next_date.replace(hour=s.start_time.hour, minute=s.start_time.minute),
-            duration=s.duration
-        )
-        repeated.id = None
-        sessions.append(repeated)
+        grouped.setdefault(weekday, []).append(s)
 
-    athletes = Athlete.query.order_by(Athlete.first_name).all()
-    return render_template('timetable.html', sessions=sessions, athletes=athletes)
+    return render_template("timetable.html", grouped=grouped, sessions=sessions, athletes=athletes)
 
 @app.route('/checkin', methods=['POST'])
 def checkin():
@@ -137,78 +126,75 @@ def checkin():
 
     athlete = Athlete.query.filter_by(first_name=athlete_name).first()
     if not athlete:
-        flash('Athlete not found.')
+        flash('Athlete not found.', 'danger')
         return redirect(url_for('timetable'))
 
     a = Attendance(athlete_id=athlete.id, session_id=session_id, effort=effort, discipline=discipline)
     db.session.add(a)
     db.session.commit()
+    flash('Check-in recorded.', 'success')
     return redirect(url_for('timetable'))
+
+from datetime import datetime, timedelta  
 
 @app.route('/create-session', methods=['GET', 'POST'])
 def create_session():
     if request.method == 'POST':
-        name = request.form['name']
-        session_type = request.form['type']
-        start_time = datetime.fromisoformat(request.form['start_time'])
-        duration = int(request.form['duration'])
-        recurring = request.form['recurring'] == 'yes'
-        weekday = start_time.weekday() if recurring else None
+        name = request.form.get('name')
+        session_type = request.form.get('type')
+        start_date = request.form.get('start_date')  
+        start_time = request.form.get('start_time')  
+
+        if not start_date or not start_time:
+            flash("Start date and time are required.", "danger")
+            return redirect(url_for('create_session'))
+
+        try:
+            combined = f"{start_date}T{start_time}"  
+            date = datetime.fromisoformat(combined)
+        except ValueError:
+            flash("Invalid date or time format.", "danger")
+            return redirect(url_for('create_session'))
+
+        recurring = request.form.get('recurring') == 'yes'
+        weekday = date.weekday() if recurring else None
 
         s = Session(
             name=f"{session_type} - {name}",
-            start_time=start_time,
-            duration=duration,
+            date=date,
             recurring=recurring,
-            weekday=weekday
+            weekday=weekday,
+            location=request.form.get('location', 'Mat A'),
+            coach_name=request.form.get('coach_name', 'Coach Eric')
         )
         db.session.add(s)
         db.session.commit()
+        flash('Session created.', 'success')
         return redirect(url_for('timetable'))
 
     now = datetime.utcnow().replace(microsecond=0, second=0)
     default_start = now.isoformat()
     return render_template('create_session.html', default_start=default_start)
 
-@app.route('/athletes')
-def athletes():
-    all_athletes = Athlete.query.order_by(Athlete.last_name).all()
-    return render_template('athletes.html', athletes=all_athletes)
+@app.route('/session/<int:session_id>/edit', methods=['GET', 'POST'])
+def edit_session(session_id):
+    session = Session.query.get_or_404(session_id)
+    form = SessionForm(obj=session)
+    if form.validate_on_submit():
+        form.populate_obj(session)
+        db.session.commit()
+        flash('Session updated.', 'success')
+        return redirect(url_for('timetable'))
+    return render_template('edit_session.html', form=form)
 
-@app.route('/summary')
-def summary():
-    period = request.args.get('period', 'week')
-    now = datetime.utcnow()
-
-    if period == 'week':
-        start = now - timedelta(days=7)
-    elif period == 'month':
-        start = now - timedelta(days=30)
-    else:
-        start = now - timedelta(days=90)
-
-    attendances = Attendance.query.filter(Attendance.session.has(Session.start_time >= start)).all()
-
-    stats = {}
-    for a in attendances:
-        athlete = a.athlete.full_name()
-        if athlete not in stats:
-            stats[athlete] = {'sessions': 0, 'effort': 0, 'discipline': 0}
-        stats[athlete]['sessions'] += 1
-        stats[athlete]['effort'] += a.effort
-        stats[athlete]['discipline'] += a.discipline
-
-    return render_template('summary.html', stats=stats, period=period)
-
-@app.route('/bulk-delete-athletes', methods=['POST'])
-def bulk_delete_athletes():
-    athlete_ids = request.form.getlist('athlete_ids')
-    for athlete_id in athlete_ids:
-        athlete = Athlete.query.get(int(athlete_id))
-        if athlete:
-            db.session.delete(athlete)
+@app.route('/delete-session', methods=['POST'])
+def delete_session():
+    session_id = int(request.form['session_id'])
+    session = Session.query.get_or_404(session_id)
+    db.session.delete(session)
     db.session.commit()
-    return redirect(url_for('athletes'))
+    flash("Session deleted.", "warning")
+    return redirect(url_for('timetable'))
 
 @app.route('/bulk-delete-sessions', methods=['POST'])
 def bulk_delete_sessions():
@@ -218,21 +204,125 @@ def bulk_delete_sessions():
         if session:
             db.session.delete(session)
     db.session.commit()
+    flash(f"{len(session_ids)} sessions deleted.", "warning")
     return redirect(url_for('timetable'))
 
+from datetime import datetime, date
+# ------------------- Routes -------------------
+
+from datetime import date
+
+@app.route('/athletes')
+def athletes():
+    belt = request.args.get('belt')
+    gender = request.args.get('gender')
+    group = request.args.get('group')
+
+    query = Athlete.query
+
+    # ✅ Filter by belt and gender if provided
+    if belt:
+        query = query.filter_by(belt=belt)
+    if gender:
+        query = query.filter_by(gender=gender)
+
+    # ✅ Filter by discipline group directly
+    if group:
+        query = query.filter_by(group=group)
+
+    athletes = query.order_by(Athlete.last_name).all()
+    return render_template('athletes.html', athletes=athletes)
+
+
+@app.route('/update_athlete', methods=['POST'])
+def update_athlete():
+    athlete = Athlete.query.get(request.form['athlete_id'])
+    athlete.belt = request.form['belt']
+    weight = request.form.get('weight')
+    athlete.weight = float(weight) if weight else None
+    athlete.gender = request.form['gender']
+    dob = request.form['date_of_birth']
+    athlete.date_of_birth = datetime.strptime(dob, '%Y-%m-%d').date() if dob else None
+    db.session.commit()
+    flash("✅ Athlete updated.", "success")
+    return redirect(url_for('athletes'))
+
+@app.route('/edit-athlete/<int:athlete_id>', methods=['GET', 'POST'])
+def edit_athlete(athlete_id):
+    athlete = Athlete.query.get_or_404(athlete_id)
+
+    if request.method == 'POST':
+        athlete.first_name = request.form['first_name']
+        athlete.last_name = request.form['last_name']
+        athlete.belt = request.form['belt']
+        athlete.weight = request.form.get('weight', type=float)
+        athlete.gender = request.form.get('gender')
+        dob = request.form.get('date_of_birth')
+        athlete.date_of_birth = datetime.strptime(dob, '%Y-%m-%d') if dob else None
+
+        db.session.commit()
+        return redirect(url_for('athletes'))
+
+    return render_template('edit_athlete.html', athlete=athlete)
+
+@app.route('/delete-athlete/<int:athlete_id>', methods=['POST'])
+def delete_athlete(athlete_id):
+    athlete = Athlete.query.get_or_404(athlete_id)
+    db.session.delete(athlete)
+    db.session.commit()
+    return redirect(url_for('athletes'))
+
+@app.route('/bulk-delete-athletes', methods=['POST'])
+def bulk_delete_athletes():
+    athlete_ids = request.form.getlist('athlete_ids')
+    for athlete_id in athlete_ids:
+        athlete = Athlete.query.get(int(athlete_id))
+        if athlete:
+            db.session.delete(athlete)
+    db.session.commit()
+    flash(f"{len(athlete_ids)} athletes deleted.", "warning")
+    return redirect(url_for('athletes'))
 
 @app.route('/register-athlete', methods=['GET', 'POST'])
 def register_athlete():
     if request.method == 'POST':
-        first_name = request.form['first_name']
-        last_name = request.form['last_name']
-        belt = request.form['belt']
-        style = request.form['style']
-        athlete = Athlete(first_name=first_name, last_name=last_name, belt=belt, style=style)
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        belt = request.form.get('belt')
+        dob = request.form.get('date_of_birth') or None
+        weight = request.form.get('weight') or None
+        gender = request.form.get('gender') or None
+        group = request.form.get('group') or None  # ✅ New discipline group
+
+        # ✅ Validate required fields only
+        if not first_name or not last_name or not belt or not group:
+            flash("First name, last name, belt, and discipline group are required.", "danger")
+            return redirect(url_for('register_athlete'))
+
+        # ✅ Convert optional fields if provided
+        from datetime import datetime
+        if dob:
+            dob = datetime.strptime(dob, "%Y-%m-%d").date()
+        if weight:
+            weight = float(weight)
+
+        # ✅ Create athlete object
+        athlete = Athlete(
+            first_name=first_name,
+            last_name=last_name,
+            belt=belt,
+            date_of_birth=dob,
+            weight=weight,
+            gender=gender,
+            group=group
+        )
+
         db.session.add(athlete)
         db.session.commit()
+        flash("✅ Athlete registered successfully.", "success")
         return redirect(url_for('athletes'))
 
+    # GET request fallback
     return render_template('register_athlete.html')
 
 # ------------------- Run App -------------------

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Club Dashboard{% endblock %}
+
 {% block content %}
 <h2 class="text-white mb-4">🏠 Club Dashboard</h2>
 
@@ -56,7 +57,7 @@
 </ul>
 
 <h4 class="text-white">📈 Most Improved Athletes</h4>
-<ul class="list-group">
+<ul class="list-group mb-4">
   {% for style, name in most_improved.items() %}
   <li class="list-group-item d-flex justify-content-between">
     <strong>{{ style }}</strong>
@@ -64,30 +65,28 @@
   </li>
   {% endfor %}
 </ul>
-{% endblock %}
-<table>
-  <thead>
-    <tr>
-      <th>Athlete Name</th>
-      <th>Effort</th>
-      <th>Discipline</th>
-      <th>Timestamp</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for attendance in attendances %}
+
+<h4 class="text-white">📋 Recent Attendance Records</h4>
+<div class="table-responsive mb-5">
+  <table class="table table-dark table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Athlete Name</th>
+        <th>Effort</th>
+        <th>Discipline</th>
+        <th>Timestamp</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for attendance in attendances %}
       <tr>
         <td>{{ attendance.athlete_name }}</td>
         <td>{{ attendance.effort }}</td>
         <td>{{ attendance.discipline }}</td>
         <td>{{ attendance.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
       </tr>
-    {% endfor %}
-  </tbody>
-</table>
-<h3>Top Attendees This Month</h3>
-<ul>
-  {% for style, name in top_attendees.items() %}
-    <li><strong>{{ style }}:</strong> {{ name }}</li>
-  {% endfor %}
-</ul>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
